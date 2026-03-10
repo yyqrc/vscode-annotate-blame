@@ -2,7 +2,7 @@
     "name": "blame-annotate",
     "displayName": "Blame Annotate",
     "description": "Display git or svn blame in editor gutter like JetBrains IDEs",
-    "version": "0.3.6",
+    "version": "0.3.7",
     "publisher": "ashiqi",
     "license": "MIT",
     "repository": {
