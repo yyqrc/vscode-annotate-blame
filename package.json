@@ -2,7 +2,7 @@
     "name": "blame-annotate",
     "displayName": "Blame Annotate",
     "description": "Display git or svn blame in editor gutter like JetBrains IDEs",
-    "version": "0.3.4",
+    "version": "0.3.5",
     "publisher": "ashiqi",
     "license": "MIT",
     "repository": {
@@ -103,7 +103,8 @@
         "watch": "tsc -watch -p ./",
         "pretest": "npm run compile && npm run lint",
         "lint": "eslint src",
-        "test": "vscode-test"
+        "test": "vscode-test",
+        "release": "npm version patch && vsce package"
     },
     "devDependencies": {
         "@types/vscode": "^1.80.0",

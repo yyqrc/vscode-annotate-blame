@@ -239,17 +239,40 @@ export async function getSvnBlames(workDir: string, file: string): Promise<Blame
 
         console.log(`[SVN] Parsed ${entries.length} entries`);
 
+        // 批量获取所有唯一 revision 的 log message
+        const revisionMessages = new Map<string, string>();
+        const uniqueRevisions = [...new Set(entries.map(e => e.revision).filter(r => r !== '0'))];
+        if (uniqueRevisions.length > 0) {
+            try {
+                const revList = uniqueRevisions.join(',');
+                const logXml = await exec(workDir, ['log', '--xml', '-r', revList, '--', path.basename(file)]);
+                const logEntryRegex = /<logentry\s+revision="(\d+)">([\s\S]*?)<\/logentry>/g;
+                let logMatch;
+                while ((logMatch = logEntryRegex.exec(logXml)) !== null) {
+                    const rev = logMatch[1];
+                    const msgMatch = logMatch[2].match(/<msg[^>]*>([\s\S]*?)<\/msg>/);
+                    if (msgMatch) {
+                        revisionMessages.set(rev, msgMatch[1].trim());
+                    }
+                }
+                console.log(`[SVN] Fetched log messages for ${revisionMessages.size} revisions`);
+            } catch (e) {
+                console.log(`[SVN] Failed to fetch log messages: ${e}`);
+            }
+        }
+
         // 按行号排序并转换为 Blame 格式
         entries.sort((a, b) => a.lineNum - b.lineNum);
 
         for (const entry of entries) {
+            const msg = revisionMessages.get(entry.revision);
             blames.push({
                 line: entry.lineNum,
                 commit: entry.revision,
                 author: entry.author,
                 mail: '',
                 timestamp: entry.timestamp,
-                summary: `r${entry.revision}`,
+                summary: msg || `r${entry.revision}`,
                 commited: true,
                 title: ''
             });
