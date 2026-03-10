@@ -2,6 +2,7 @@ import path from 'path';
 import * as vscode from 'vscode';
 import { Uri } from 'vscode';
 import { Blame, Change, getBlames, getChanges, getEmptyTree, getFileStatus, getGitRepository, getParentCommitId } from './git';
+import { detectVcsType, getSvnBlames } from './svn';
 
 
 // 全局状态
@@ -19,12 +20,15 @@ const MaxTitleWidth = 25;
  * 激活插件
  */
 export function activate(context: vscode.ExtensionContext) {
+    const t0 = Date.now();
+    console.log(`[EXT] activate start`);
     registerCommands(context);
     registerListeners(context);
     const editor = vscode.window.activeTextEditor;
     if (editor) {
         updateMenuContext(editor.document);
     }
+    console.log(`[EXT] activate done in ${Date.now() - t0}ms`);
 }
 
 /**
@@ -209,8 +213,34 @@ async function showDecorations(editors: vscode.TextEditor[], reload: boolean = f
     fileDecorations.set(documentUri, decorations);
 
     try {
-        // Blames
-        const blames = await getBlames(path.dirname(document.fileName), document.fileName);
+        // 检测版本控制系统类型
+        console.log(`[EXT] showDecorations called for: ${document.fileName}`);
+        const statusItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
+        statusItem.text = '$(sync~spin) Loading blame...';
+        statusItem.show();
+        let blames: Blame[];
+        try {
+            const vcsType = await detectVcsType(document.fileName);
+            console.log(`[EXT] VCS type detected: ${vcsType}`);
+
+            if (vcsType === 'svn') {
+                // SVN 仓库
+                console.log(`[EXT] Calling getSvnBlames for SVN`);
+                blames = await getSvnBlames(path.dirname(document.fileName), document.fileName);
+            } else if (vcsType === 'git') {
+                // Git 仓库
+                console.log(`[EXT] Calling getBlames for Git`);
+                blames = await getBlames(path.dirname(document.fileName), document.fileName);
+            } else {
+                // 非 Git/SVN 仓库，不显示 blame
+                console.log(`[EXT] Not a Git or SVN repository`);
+                vscode.window.showWarningMessage('文件不在 Git 或 SVN 版本控制下');
+                return false;
+            }
+        } finally {
+            statusItem.dispose();
+        }
+
         for (let i = blames.length; i < document.lineCount; i++) {
             blames.push(buildUncommitBlame(i + 1));
         }
@@ -366,20 +396,38 @@ async function updateMenuContext(document: vscode.TextDocument, currentState: bo
     }
 
     try {
-        // check file tracked
-        const fileStatus = await getFileStatus(path.dirname(document.fileName), document.fileName);
-        const isTracked = fileStatus !== "untracked" && fileStatus !== "index_add";
-        if (!isTracked) {
+        // 检测版本控制系统类型
+        console.log(`[EXT] updateMenuContext called for: ${document.fileName}`);
+        const vcsType = await detectVcsType(document.fileName);
+        console.log(`[EXT] updateMenuContext - VCS type: ${vcsType}`);
+
+        if (!vcsType) {
+            // 非 Git/SVN 仓库
+            console.log(`[EXT] updateMenuContext - Not a Git/SVN repository`);
             vscode.commands.executeCommand('setContext', 'gitblame.showMenuState', false);
             vscode.commands.executeCommand('setContext', 'gitblame.hideMenuState', false);
             return;
         }
+
+        if (vcsType === 'git') {
+            // check file tracked
+            const fileStatus = await getFileStatus(path.dirname(document.fileName), document.fileName);
+            const isTracked = fileStatus !== "untracked" && fileStatus !== "index_add";
+            if (!isTracked) {
+                console.log(`[EXT] updateMenuContext - Git file not tracked`);
+                vscode.commands.executeCommand('setContext', 'gitblame.showMenuState', false);
+                vscode.commands.executeCommand('setContext', 'gitblame.hideMenuState', false);
+                return;
+            }
+        }
         // check file blame state
         const fileBlameState = fileBlameStates.get(document.uri.toString());
+        console.log(`[EXT] updateMenuContext - fileBlameState: ${fileBlameState}`);
         vscode.commands.executeCommand('setContext', 'gitblame.showMenuState', !fileBlameState);
         vscode.commands.executeCommand('setContext', 'gitblame.hideMenuState', fileBlameState);
     } catch (error) {
         // check git repository
+        console.log(`[EXT] updateMenuContext - Error: ${error}`);
         vscode.commands.executeCommand('setContext', 'gitblame.showMenuState', false);
         vscode.commands.executeCommand('setContext', 'gitblame.hideMenuState', false);
     }

@@ -1,8 +1,8 @@
 {
     "name": "gitblame-annotations",
-    "displayName": "Git Blame Annotations",
-    "description": "Display git blame in editor gutter like JetBrains IDEs",
-    "version": "0.2.2",
+    "displayName": "Git/SVN Blame Annotations",
+    "description": "Display git or svn blame in editor gutter like JetBrains IDEs",
+    "version": "0.3.4",
     "publisher": "lkqm",
     "license": "MIT",
     "repository": {
@@ -21,6 +21,17 @@
     "icon": "logo.png",
     "main": "./out/extension.js",
     "contributes": {
+        "configuration": {
+            "title": "Git/SVN Blame Annotations",
+            "type": "object",
+            "properties": {
+                "gitblame.svnExecutablePath": {
+                    "type": "string",
+                    "default": "svn",
+                    "description": "Path to svn executable (e.g., 'svn' or 'C:\\Program Files\\SlikSvn\\bin\\svn.exe')"
+                }
+            }
+        },
         "commands": [
             {
                 "command": "git.blame.toggle",
@@ -44,6 +55,18 @@
                 {
                     "command": "git.blame.hide",
                     "when": "gitblame.hideMenuState"
+                }
+            ],
+            "editor/context": [
+                {
+                    "command": "git.blame.show",
+                    "when": "gitblame.showMenuState",
+                    "group": "navigation"
+                },
+                {
+                    "command": "git.blame.hide",
+                    "when": "gitblame.hideMenuState",
+                    "group": "navigation"
                 }
             ]
         },
