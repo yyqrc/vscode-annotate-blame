@@ -85,6 +85,20 @@ function registerCommands(context: vscode.ExtensionContext) {
         }
     });
 
+    // Show blame annotations (SVN, same logic, different menu title)
+    const showSvnCommand = vscode.commands.registerCommand('git.blame.show.svn', async (event?: any) => {
+        const documentUri = (event?.uri || vscode.window.activeTextEditor?.document.uri)?.toString() || "";
+        if (documentUri) {
+            const editors = vscode.window.visibleTextEditors.filter(e => e.document.uri.toString() === documentUri);
+            if (editors.length > 0) {
+                const successed = await showDecorations(editors);
+                if (successed) {
+                    updateMenuContext(editors[0].document, true);
+                }
+            }
+        }
+    });
+
     // Hide blame annotations
     const hideCommand = vscode.commands.registerCommand('git.blame.hide', async (event?: any) => {
         const editor = vscode.window.activeTextEditor;
@@ -112,7 +126,7 @@ function registerCommands(context: vscode.ExtensionContext) {
             await vscode.commands.executeCommand('_workbench.openMultiDiffEditor', { multiDiffSourceUri, title, resources });
         }
     });
-    context.subscriptions.push(toggleCommand, showCommand, hideCommand, viewCommitCommand);
+    context.subscriptions.push(toggleCommand, showCommand, showSvnCommand, hideCommand, viewCommitCommand);
 }
 
 /**
@@ -406,8 +420,11 @@ async function updateMenuContext(document: vscode.TextDocument, currentState: bo
             console.log(`[EXT] updateMenuContext - Not a Git/SVN repository`);
             vscode.commands.executeCommand('setContext', 'gitblame.showMenuState', false);
             vscode.commands.executeCommand('setContext', 'gitblame.hideMenuState', false);
+            vscode.commands.executeCommand('setContext', 'gitblame.vcsType', '');
             return;
         }
+
+        vscode.commands.executeCommand('setContext', 'gitblame.vcsType', vcsType);
 
         if (vcsType === 'git') {
             // check file tracked

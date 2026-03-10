@@ -1,0 +1,6 @@
+{
+    "command.toggle": "切换追溯注解",
+    "command.show.git": "显示追溯注解",
+    "command.show.svn": "显示追溯注解",
+    "command.hide": "关闭追溯注解"
+}

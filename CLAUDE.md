@@ -54,7 +54,7 @@ Two module-level Maps in `extension.ts` track all state:
 
 ### VCS Detection Priority
 
-`detectVcsType()` in `svn.ts` runs Git and SVN checks in parallel, but **SVN takes priority** if both are detected (a file can be in a directory that has both `.git` and `.svn`).
+`detectVcsType()` in `svn.ts` uses **SVN-first serial detection**: checks for `.svn` directory via `fs.existsSync` (no subprocess, < 1ms), returns `'svn'` immediately if found, otherwise checks for `.git` the same way. This replaced the original `svn info`/`git rev-parse` subprocess approach which took 300-800ms.
 
 ### Heatmap Colors
 

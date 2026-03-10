@@ -1,0 +1,6 @@
+{
+    "command.toggle": "Toggle Blame Annotations",
+    "command.show.git": "Show Blame Annotations",
+    "command.show.svn": "Show Blame Annotations",
+    "command.hide": "Close Blame Annotations"
+}

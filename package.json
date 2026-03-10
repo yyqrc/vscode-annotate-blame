@@ -1,13 +1,13 @@
 {
-    "name": "gitblame-annotations",
-    "displayName": "Git/SVN Blame Annotations",
+    "name": "blame-annotate",
+    "displayName": "Blame Annotate",
     "description": "Display git or svn blame in editor gutter like JetBrains IDEs",
     "version": "0.3.4",
-    "publisher": "lkqm",
+    "publisher": "ashiqi",
     "license": "MIT",
     "repository": {
         "type": "git",
-        "url": "https://github.com/lkqm/vscode-gitblame-annotations.git"
+        "url": "https://github.com/yyqrc/vscode-annotate-blame.git"
     },
     "engines": {
         "vscode": "^1.80.0"
@@ -22,10 +22,10 @@
     "main": "./out/extension.js",
     "contributes": {
         "configuration": {
-            "title": "Git/SVN Blame Annotations",
+            "title": "Blame Annotate",
             "type": "object",
             "properties": {
-                "gitblame.svnExecutablePath": {
+                "blameAnnotate.svnExecutablePath": {
                     "type": "string",
                     "default": "svn",
                     "description": "Path to svn executable (e.g., 'svn' or 'C:\\Program Files\\SlikSvn\\bin\\svn.exe')"
@@ -35,22 +35,30 @@
         "commands": [
             {
                 "command": "git.blame.toggle",
-                "title": "Toggle Annotations"
+                "title": "%command.toggle%"
             },
             {
                 "command": "git.blame.show",
-                "title": "Annotate with Git Blame"
+                "title": "%command.show.git%"
+            },
+            {
+                "command": "git.blame.show.svn",
+                "title": "%command.show.svn%"
             },
             {
                 "command": "git.blame.hide",
-                "title": "Close Annotations"
+                "title": "%command.hide%"
             }
         ],
         "menus": {
             "editor/lineNumber/context": [
                 {
                     "command": "git.blame.show",
-                    "when": "gitblame.showMenuState"
+                    "when": "gitblame.showMenuState && gitblame.vcsType == 'git'"
+                },
+                {
+                    "command": "git.blame.show.svn",
+                    "when": "gitblame.showMenuState && gitblame.vcsType == 'svn'"
                 },
                 {
                     "command": "git.blame.hide",
@@ -60,7 +68,12 @@
             "editor/context": [
                 {
                     "command": "git.blame.show",
-                    "when": "gitblame.showMenuState",
+                    "when": "gitblame.showMenuState && gitblame.vcsType == 'git'",
+                    "group": "navigation"
+                },
+                {
+                    "command": "git.blame.show.svn",
+                    "when": "gitblame.showMenuState && gitblame.vcsType == 'svn'",
                     "group": "navigation"
                 },
                 {
