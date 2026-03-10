@@ -239,13 +239,15 @@ export async function getSvnBlames(workDir: string, file: string): Promise<Blame
 
         console.log(`[SVN] Parsed ${entries.length} entries`);
 
-        // 批量获取所有唯一 revision 的 log message
+        // 批量获取所有唯一 revision 的 log message（用 min:max 范围，兼容性好于逗号列表）
         const revisionMessages = new Map<string, string>();
         const uniqueRevisions = [...new Set(entries.map(e => e.revision).filter(r => r !== '0'))];
         if (uniqueRevisions.length > 0) {
             try {
-                const revList = uniqueRevisions.join(',');
-                const logXml = await exec(workDir, ['log', '--xml', '-r', revList, '--', path.basename(file)]);
+                const nums = uniqueRevisions.map(Number);
+                const minRev = Math.min(...nums);
+                const maxRev = Math.max(...nums);
+                const logXml = await exec(workDir, ['log', '--xml', '-r', `${minRev}:${maxRev}`, '--', path.basename(file)]);
                 const logEntryRegex = /<logentry\s+revision="(\d+)">([\s\S]*?)<\/logentry>/g;
                 let logMatch;
                 while ((logMatch = logEntryRegex.exec(logXml)) !== null) {
